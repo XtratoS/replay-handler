@@ -1,0 +1,27 @@
+{
+  "name": "replay-handler",
+  "version": "1.0.0",
+  "description": "This project was created to handle sorting ballchasing.com replays",
+  "main": "index.js",
+  "scripts": {
+    "dev": "tsc && cd build && node --experimental-fetch index",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/XtratoS/replay-handler.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/XtratoS/replay-handler/issues"
+  },
+  "homepage": "https://github.com/XtratoS/replay-handler#readme",
+  "devDependencies": {
+    "@types/node": "^18.7.23",
+    "typescript": "^4.8.4"
+  },
+  "dependencies": {
+    "dotenv": "^16.0.3"
+  }
+}
