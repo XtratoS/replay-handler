@@ -1,7 +1,6 @@
 import { RequestOptions } from './types';
 
 export const makeAPIRequest = (endpoint: string, method = 'GET', body: {} | null = null) => {
-  console.log('req')
 	const requestOptions: RequestOptions = {
 		method,
 		headers: {
