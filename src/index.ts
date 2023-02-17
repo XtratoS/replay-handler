@@ -14,7 +14,10 @@ const handleNewReplay = async (replay: Replay) => {
 
   if (!replayData) return;
   if (replayData.region.toLowerCase() !== 'mena') return;
-  if (replayData.gameIndex === '0') return;
+  if (replayData.gameIndex === '0') {
+    console.log(`Ignored Replay 0 of match ${replayData.seriesLetter}: ${replayData.team1abbr} vs ${replayData.team2abbr}`);
+    return;
+  }
 
   const parentGroupId = parentGroups.find((groupEntry) => groupEntry.letters.includes(replayData.seriesLetter))?.groupId;
   if (!parentGroupId) return;
