@@ -1,4 +1,5 @@
 import { Replay } from "./types";
+import { appendFileSync } from 'fs';
 
 type abbrType = {abbr: string, full: string}
 const Abbreviations: abbrType[] = require('./Abbreviations.json') as abbrType[];
@@ -48,4 +49,9 @@ export const splitReplayTitle = (replay: Replay): {
 		team2full,
 		gameIndex
 	}
+}
+
+export const logEvent = (ev: string) => {
+  console.log(ev);
+  appendFileSync('../console.log', `${ev}\n`);
 }

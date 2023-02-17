@@ -3,7 +3,7 @@ import { EventEmitter } from 'events';
 import { findOrCreateGroup } from './GroupHandler';
 import { getLastNReplaysAfter, getLatestReplay, setReplayGroup } from './ReplayHandler';
 import { Replay } from './types';
-import { sleep, splitReplayTitle } from './util';
+import { logEvent, sleep, splitReplayTitle } from './util';
 const parentGroups: {groupId: string, letters: string[]}[] = require('./MatchesParentGroups.json');
 
 const NEW_REPLAY_EVENT = 'new_replay';
@@ -15,7 +15,7 @@ const handleNewReplay = async (replay: Replay) => {
   if (!replayData) return;
   if (replayData.region.toLowerCase() !== 'mena') return;
   if (replayData.gameIndex === '0') {
-    console.log(`Ignored Replay 0 of match ${replayData.seriesLetter}: ${replayData.team1abbr} vs ${replayData.team2abbr}`);
+    logEvent(`Ignored Replay 0 of match ${replayData.seriesLetter}: ${replayData.team1abbr} vs ${replayData.team2abbr}`);
     return;
   }
 
@@ -26,7 +26,7 @@ const handleNewReplay = async (replay: Replay) => {
   const groupId = await findOrCreateGroup(parentGroupId, groupName);
   if (groupId === '') return;
 
-  console.log('adding new replay ' + replay.replay_title + ' to ' + groupName);
+  logEvent('adding new replay ' + replay.replay_title + ' to ' + groupName);
   const res = await setReplayGroup(replay.id, groupId);
 }
 
