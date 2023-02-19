@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@600&display=swap');
+  #data {
+    padding: 2em 4em;
+    font-family: 'Cairo', sans-serif;
+  }
+  .single-replay-container {
+    display: flex;
+    gap: 1em;
+  }
+  .date {
+
+  }
+  .action {
+
+  }
+  .human-text {
+
+  }
+  .replay-name {
+
+  }
+  .group-name {
+
+  }
+</style>
+<body>
+  <div id="data">
+    EMPTY DATA
+  </div>
+</body>
+<script>
+  let replaysData = [];
+
+  const tokenizeReplayText = (text) => {
+    const container = document.createElement('div');
+    container.classList.add('single-replay-container');
+    const tokenizedText = text.split(';');
+    const date = document.createElement('div');
+    date.innerText = tokenizedText[0];
+    date.classList.add('date');
+    const action = document.createElement('div');
+    action.innerText = tokenizedText[1];
+    action.classList.add('action');
+    const humanText = document.createElement('div');
+    humanText.innerText = tokenizedText[2];
+    humanText.classList.add('human-text');
+    const replayName = document.createElement('div');
+    replayName.innerText = tokenizedText[3];
+    replayName.classList.add('replay-name');
+    const groupName = document.createElement('div');
+    groupName.innerText = tokenizedText[4];
+    groupName.classList.add('group-name');
+    container.appendChild(date);
+    container.appendChild(action);
+    container.appendChild(humanText);
+    container.appendChild(replayName);
+    container.appendChild(groupName);
+    return container;
+  }
+  const updateData = () => {
+    fetch('./console.log', {cache: "no-store"}).then(f => {
+      f.json().then(json => {
+        const data = document.querySelector('#data');
+        data.innerHTML = '';
+        json.forEach(replay => {
+          
+        });
+        // t.split('\n').forEach(replayText => {
+        //   if (replayText.length > 3) {
+        //     data.appendChild(tokenizeReplayText(replayText));
+        //   }
+        // });
+      });
+    });
+  }
+  document.addEventListener("DOMContentLoaded", updateData);
+  setInterval(() => {
+    updateData();
+  }, 1000);
+</script>
+</html>
