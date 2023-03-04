@@ -27,7 +27,10 @@
   }
   .single-replay-container {
     display: flex;
+    width: fit-content;
     gap: 1em;
+    padding: 0 .5em;
+    transition: all .4s;
   }
   .single-replay-container div {
     padding: 0 .5em;
@@ -63,6 +66,12 @@
 </body>
 <script>
   let replaysData = [];
+  const Actions = {
+    IGNORED_OTHER_REGION: "IGNORED_OTHER_REGION",
+    IGNORED_GAME_0: "IGNORED_GAME_0",
+    ADDING_NEW_REPLAY: "ADDING_NEW_REPLAY",
+    CREATED_GROUP: "CREATED_GROUP"
+  }
 
   const getReplayId = (replay) => {
     return `${replay.title}-${(new Date(replay.date)).getTime()}`.replace(/\s/g,'').replace(/\./g,'');
@@ -95,6 +104,26 @@
     let g = parseInt(hexCode.slice(2, 4), 16);
     let b = parseInt(hexCode.slice(4, 6), 16);
     return (r * 0.299 + g * 0.587 + b * 0.114) > (256/2) ? '#000000' : '#FFFFFF';
+  }
+
+  const flashDiv = (div, action) => {
+    bgColors = {
+      [Actions.ADDING_NEW_REPLAY]: 'success',
+      [Actions.CREATED_GROUP]: 'success',
+      [Actions.IGNORED_GAME_0]: 'warning',
+      [Actions.IGNORED_OTHER_REGION]: 'warning'
+    }
+    let bgColor = bgColors[action];
+    div.classList.add(`bg-${bgColor}`, 'text-dark');
+    setTimeout(() => {
+      div.classList.remove(`bg-${bgColor}`, 'text-dark');
+      setTimeout(() => {
+        div.classList.add(`bg-${bgColor}`, 'text-dark');
+        setTimeout(() => {
+          div.classList.remove(`bg-${bgColor}`, 'text-dark');
+        }, 500);
+      }, 150);
+    }, 150);
   }
 
   const tokenizeReplayText = (replay) => {
@@ -138,7 +167,9 @@
         json.forEach(replay => {
           let replayId = getReplayId(replay);
           if (!childrenIds.includes(replayId)) {
-            data.insertBefore(tokenizeReplayText(replay), data.children.item(0));
+            let newReplayContainer = tokenizeReplayText(replay);
+            data.insertBefore(newReplayContainer, data.children.item(0));
+            flashDiv(newReplayContainer, replay.action);
           } else {
             let replayContainer = document.querySelector(`#${replayId}`);
             let dateContainer = replayContainer.querySelector('.date');
