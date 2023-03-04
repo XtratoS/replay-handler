@@ -151,8 +151,13 @@
     replayName.style.color = 'inherit';
     replayContainer.classList.add('replay-name');
     const groupNameDiv = document.createElement('div');
+    const groupNameAnchor = document.createElement(replay.groupLink ? 'a' : 'span');
+    groupNameDiv.appendChild(groupNameAnchor);
     let groupName = replay.groupName || 'Unknown';
-    groupNameDiv.innerText = groupName;
+    groupNameAnchor.innerText = groupName + (replay.groupLink ? ' 🔗' : '');
+    groupNameAnchor.href = replay.groupLink || '#';
+    groupNameAnchor.style.textDecoration = 'none';
+    groupNameAnchor.style.color = 'inherit';
     groupNameDiv.classList.add('group-name', 'badge');
     let bgColor = stringToColour(groupName);
     groupNameDiv.style.backgroundColor = bgColor;
