@@ -73,3 +73,10 @@ export type ReplayGroup = {
 		avatar: string
 	}
 }
+
+export enum Actions {
+  IGNORED_OTHER_REGION = "IGNORED_OTHER_REGION",
+  IGNORED_GAME_0 = "IGNORED_GAME_0",
+  ADDING_NEW_REPLAY = "ADDING_NEW_REPLAY",
+  CREATED_GROUP = "CREATED_GROUP"
+}
