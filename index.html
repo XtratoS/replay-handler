@@ -4,11 +4,24 @@
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
+  <title>MENA Replay Sorter</title>
 </head>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@600&display=swap');
+  :root {
+    --bs-body-color: #adb5bd;
+    --bs-body-bg: #212529;
+  }
+  body {
+    background-color: var(--bs-body-bg);
+    color: var(--bs-body-color);
+    white-space: nowrap;
+  }
   #data {
+    display: flex;
+    flex-direction: column;
+    gap: .1em;
     padding: 2em 4em;
     font-family: 'Cairo', sans-serif;
   }
@@ -16,75 +29,128 @@
     display: flex;
     gap: 1em;
   }
+  .single-replay-container div {
+    padding: 0 .5em;
+  }
   .date {
-
+    font-size: .6em;
+    width: 5em;
+    display: flex;
+    align-items: center;
+    justify-content: start;
   }
   .action {
-
-  }
-  .human-text {
-
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   .replay-name {
-
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   .group-name {
-
+    font-size: 1em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 </style>
 <body>
   <div id="data">
-    EMPTY DATA
+    <div id="placeholder"></div>
   </div>
 </body>
 <script>
   let replaysData = [];
 
-  const tokenizeReplayText = (text) => {
+  const getReplayId = (replay) => {
+    return `${replay.title}-${(new Date(replay.date)).getTime()}`.replace(/\s/g,'').replace(/\./g,'');
+  }
+
+  const getTimeText = (replay) => {
+    const formatter = new Intl.RelativeTimeFormat(`en`, { style: `narrow`, });
+    const seconds = Math.ceil(((new Date(replay.date)).getTime() - (Date.now())) / 1000);
+    const minutes = Math.ceil(seconds / 60);
+    const hours = Math.ceil(minutes / 60);
+    return formatter.format(hours < 0 ? hours : minutes < 0 ? minutes : seconds, hours < 0 ? 'hour' : minutes < 0 ? 'minute' : 'second');
+  }
+
+  const stringToColour = (str) => {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    let colour = '#';
+    for (let i = 0; i < 3; i++) {
+      let value = (hash >> (i * 8)) & 0xFF;
+      colour += ('00' + value.toString(16)).substr(-2);
+    }
+    return colour;
+  }
+
+  function invertColor(hex) {
+    let hexCode = hex.slice(1);
+    let r = parseInt(hexCode.slice(0, 2), 16);
+    let g = parseInt(hexCode.slice(2, 4), 16);
+    let b = parseInt(hexCode.slice(4, 6), 16);
+    return (r * 0.299 + g * 0.587 + b * 0.114) > (256/2) ? '#000000' : '#FFFFFF';
+  }
+
+  const tokenizeReplayText = (replay) => {
     const container = document.createElement('div');
+    container.id = getReplayId(replay);
     container.classList.add('single-replay-container');
-    const tokenizedText = text.split(';');
     const date = document.createElement('div');
-    date.innerText = tokenizedText[0];
+    date.innerText = getTimeText(replay)
     date.classList.add('date');
     const action = document.createElement('div');
-    action.innerText = tokenizedText[1];
-    action.classList.add('action');
-    const humanText = document.createElement('div');
-    humanText.innerText = tokenizedText[2];
-    humanText.classList.add('human-text');
+    action.innerText = `${replay.action} G${replay.gameIndex} of ${replay.team1} vs ${replay.team2} [${replay.seriesLetter}]`;
+    action.classList.add('action', 'badge');
+    replayAction = replay.action
+    if (replayAction === 'IGNORED_GAME_0' || replayAction === 'IGNORED_OTHER_REGION') {
+      action.classList.add('text-bg-warning');
+    } else if (replayAction === 'ADDING_NEW_REPLAY') {
+      action.classList.add('text-bg-success');
+    }
     const replayName = document.createElement('div');
-    replayName.innerText = tokenizedText[3];
+    replayName.innerText = replay.title;
     replayName.classList.add('replay-name');
-    const groupName = document.createElement('div');
-    groupName.innerText = tokenizedText[4];
-    groupName.classList.add('group-name');
+    const groupNameDiv = document.createElement('div');
+    let groupName = replay.groupName || 'Unknown';
+    groupNameDiv.innerText = groupName;
+    groupNameDiv.classList.add('group-name', 'badge');
+    let bgColor = stringToColour(groupName);
+    groupNameDiv.style.backgroundColor = bgColor;
+    groupNameDiv.style.color = invertColor(bgColor);
     container.appendChild(date);
     container.appendChild(action);
-    container.appendChild(humanText);
     container.appendChild(replayName);
-    container.appendChild(groupName);
+    container.appendChild(groupNameDiv);
     return container;
   }
   const updateData = () => {
-    fetch('./console.log', {cache: "no-store"}).then(f => {
+    fetch('./log', {cache: "no-store"}).then(f => {
       f.json().then(json => {
         const data = document.querySelector('#data');
-        data.innerHTML = '';
+        let children = Array.from(data.children);
+        let childrenIds = children.map(c => c.id);        
         json.forEach(replay => {
-          
+          let replayId = getReplayId(replay);
+          if (!childrenIds.includes(replayId)) {
+            data.insertBefore(tokenizeReplayText(replay), data.children.item(0));
+          } else {
+            let replayContainer = document.querySelector(`#${replayId}`);
+            let dateContainer = replayContainer.querySelector('.date');
+            dateContainer.innerText = getTimeText(replay);
+          }
         });
-        // t.split('\n').forEach(replayText => {
-        //   if (replayText.length > 3) {
-        //     data.appendChild(tokenizeReplayText(replayText));
-        //   }
-        // });
       });
     });
   }
   document.addEventListener("DOMContentLoaded", updateData);
   setInterval(() => {
     updateData();
-  }, 1000);
+  }, 10000);
 </script>
 </html>

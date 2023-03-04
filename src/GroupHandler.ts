@@ -29,21 +29,30 @@ export const getGroups = async (groupId: string, groupName = ''): Promise<{group
 	return output;
 }
 
-export const findOrCreateGroup = async (parentGroupId: string, groupName: string): Promise<string> => {
+export const findOrCreateGroup = async (parentGroupId: string, groupName: string): Promise<{
+  new: boolean,
+  groupId: string
+}> => {
+
   const childGroupsRequest = await makeAPIRequest(`groups?group=${parentGroupId}`);
-  if (!childGroupsRequest) return '';
+  if (!childGroupsRequest) {
+    // return;
+    throw new Error(`Request to find child groups of ${parentGroupId} failed.`);
+  };
+
   const jsonResponse = await childGroupsRequest.json();
-  if (!jsonResponse || !jsonResponse.list) return '';
+  if (!jsonResponse || !jsonResponse.list) {
+    // return;
+    throw new Error(`Invalid JSON Response for request at groups?group=${parentGroupId}`);
+  };
+
   const childGroups: ReplayGroup[] = jsonResponse.list;
 
-  let groupId = '';
+  let created = false;
+  let groupId: string;
 
-  let groupIdInChildGroups = childGroups.find(group => group.name.toLowerCase() === groupName.toLowerCase())?.id;
-  if (groupIdInChildGroups) {
-    groupId = groupIdInChildGroups
-  }
-
-  if (!groupIdInChildGroups) {
+  let foundGroupId = childGroups.find(group => group.name.toLowerCase() === groupName.toLowerCase())?.id;
+  if (!foundGroupId) {
     let groupRes = await makeAPIRequest('groups', 'POST', {
       name: groupName,
       parent: parentGroupId,
@@ -52,7 +61,13 @@ export const findOrCreateGroup = async (parentGroupId: string, groupName: string
     });
     let jsonRes = await groupRes?.json();
     groupId = jsonRes.id;
+    created = true;
+  } else {
+    groupId = foundGroupId
   }
 
-  return groupId;
+  return {
+    new: created,
+    groupId
+  };
 }

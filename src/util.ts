@@ -16,9 +16,11 @@ export const splitReplayTitle = (replay: Replay): {
 	team1full: string,
 	team2full: string,
 	gameIndex: string
-}|null => {
+} => {
 	const splitReplayTitle = replay.replay_title.split(' ').filter(e => e.length > 0);
-  if (splitReplayTitle.length < 6) return null;
+  if (splitReplayTitle.length < 6) {
+    throw new Error(`Couldn't parse the replay title: ${replay.replay_title}`);
+  };
 	const region = splitReplayTitle[0];
 	const seriesLetter = splitReplayTitle[1];
 	let team1abbr = splitReplayTitle[2];
@@ -52,17 +54,24 @@ export const splitReplayTitle = (replay: Replay): {
 }
 
 export const logEvent = (ev: {
+  title: string,
   date: Date,
   action: string,
-  seriesLetter: string,
-  gameIndex: string,
-  groupName: string,
-  team1: string,
-  team2: string,
-  actionText: string
+  seriesLetter?: string,
+  gameIndex?: string,
+  groupName?: string,
+  team1?: string,
+  team2?: string,
+  actionText?: string
 }) => {
-  const rawData = readFileSync('./console.log');
-  const currentLog = JSON.parse(rawData.toString('utf8'));
+  let rawData;
+  let currentLog;
+  try {
+    rawData = readFileSync('./console.log');
+    currentLog = JSON.parse(rawData.toString('utf8'));
+  } catch (error) {
+    currentLog = []
+  }
   const newLog = [
     ...currentLog,
     ev

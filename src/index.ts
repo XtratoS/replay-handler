@@ -2,60 +2,110 @@ require('dotenv').config({ path: __dirname+'/Secret.env' });
 import { EventEmitter } from 'events';
 import { findOrCreateGroup } from './GroupHandler';
 import { getLastNReplaysAfter, getLatestReplay, setReplayGroup } from './ReplayHandler';
-import { Replay } from './types';
+import { Actions, Replay } from './types';
 import { logEvent, sleep, splitReplayTitle } from './util';
-const parentGroups: {groupId: string, letters: string[]}[] = require('./MatchesParentGroups.json');
+import { matchGroups } from './config.json';
+import express from 'express';
+import { readFileSync } from 'fs';
+const app = express();
+let BCPORT = process.env.BALLCHASING_PORT || 3003;
+app.get('/', (req, res) => {
+  let file = readFileSync('../index.html');
+  res.set('Content-Type', 'text/html; charset=utf-8');
+  res.send(file);
+});
+app.get('/log', (req, res) => {
+  let file = readFileSync('./console.log');
+  res.send(file);
+});
+app.listen(BCPORT, () => {
+  console.log(`BALLCHASING logger is now listening on port ${BCPORT}`);
+});
 
-const NEW_REPLAY_EVENT = 'new_replay';
+const NEW_REPLAY_EVENT = 'NEW_REPLAY_EVENT';
 const emitter = new EventEmitter();
 
 const handleNewReplay = async (replay: Replay) => {
-	const replayData = splitReplayTitle(replay);
-
+  let replayData;
+  try {
+    replayData = splitReplayTitle(replay);
+  } catch (error) {
+    console.error(error);
+  }
   if (!replayData) return;
-  if (replayData.region.toLowerCase() !== 'mena') return;
 
-  const groupName = replayData.team1abbr.toUpperCase() + ' vs ' + replayData.team2abbr.toUpperCase();
+  const { region, seriesLetter, team1abbr, team2abbr, gameIndex } = replayData;
 
-  if (replayData.gameIndex === '0') {
+  if (region.toLowerCase() !== 'mena') {
+    // logEvent({
+    //   title: replay.replay_title,
+    //   date: new Date(),
+    //   action: Actions.IGNORED_OTHER_REGION
+    // });
+    console.error(Actions.IGNORED_OTHER_REGION);
+    return;
+  };
+
+  const groupName = `${team1abbr.toUpperCase()} vs ${team2abbr.toUpperCase()}`;
+
+  const eventBaseArgs = {
+    title: replay.replay_title,
+    date: new Date(),
+    seriesLetter,
+    gameIndex,
+    groupName,
+    team1: team1abbr,
+    team2: team2abbr
+  };
+
+  if (gameIndex === '0') {
     logEvent({
-      date: new Date(),
-      action: 'Ignored replay',
-      seriesLetter: replayData.seriesLetter,
-      gameIndex: replayData.gameIndex,
-      groupName,
-      team1: replayData.team1abbr,
-      team2: replayData.team2abbr,
-      actionText: `Ignored Replay 0 of match ${replayData.seriesLetter}: ${replayData.team1abbr} vs ${replayData.team2abbr}`
-    })
+      ...eventBaseArgs,
+      action: Actions.IGNORED_GAME_0,
+      actionText: `Ignored Replay 0 of match ${seriesLetter}: ${team1abbr} vs ${team2abbr}`
+    });
+    console.error(Actions.IGNORED_GAME_0);
     return;
   }
 
-  const parentGroupId = parentGroups.find((groupEntry) => groupEntry.letters.includes(replayData.seriesLetter))?.groupId;
-  if (!parentGroupId) return;
+  const parentGroupId = matchGroups.find((groupEntry) => groupEntry.matches.includes(seriesLetter))?.groupId;
+  if (!parentGroupId) {
+    console.error(`Couldn't find parent group for match ${seriesLetter}\nreply: ${replay.replay_title}\n group: ${groupName}`);
+    return;
+  };
 
-  const groupId = await findOrCreateGroup(parentGroupId, groupName);
-  if (groupId === '') return;
+  let groupResponse: {
+    new: boolean,
+    groupId: string
+  };
+
+  try {
+    groupResponse = await findOrCreateGroup(parentGroupId, groupName);
+  } catch (error) {
+    throw error;
+  }
+  if (!groupResponse) return;
 
   logEvent({
-    date: new Date(),
-    action: 'Adding new replay',
-    seriesLetter: replayData.seriesLetter,
-    gameIndex: replayData.gameIndex,
-    groupName,
-    team1: replayData.team1abbr,
-    team2: replayData.team2abbr,
-    actionText: 'Adding new replay; ' + replay.replay_title + '; ' + groupName
+    ...eventBaseArgs,
+    action: Actions.ADDING_NEW_REPLAY,
+    actionText: `${Actions.ADDING_NEW_REPLAY}; ${replay.replay_title}; ${groupName}`
   });
-  // logEvent(`${new Date().toUTCString()}; Adding new replay; Game ${replayData.gameIndex} of ${replayData.team1abbr} vs ${replayData.team2abbr}; ${replay.replay_title}; ${groupName}`);
-  // logEvent('Adding new replay; ' + replay.replay_title + '; ' + groupName + '');
-  const res = await setReplayGroup(replay.id, groupId);
+
+  let res;
+  try {
+    res = await setReplayGroup(replay.id, groupResponse.groupId);
+  } catch (error) {
+    throw error;
+  }
+  if (!res) return;
+  return res;
 }
 
 emitter.on(NEW_REPLAY_EVENT, handleNewReplay);
 
 const pollAndAssign = async (latestReplay: Replay) => {
-	await sleep(5000);
+	await sleep(10000);
 	const newlyUploaded = await getLastNReplaysAfter(20, new Date(+new Date(latestReplay.created)+1000).toISOString());
   if (!newlyUploaded) return;
 	if (newlyUploaded.length > 0) {

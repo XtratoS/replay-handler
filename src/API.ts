@@ -14,7 +14,7 @@ export const makeAPIRequest = (endpoint: string, method = 'GET', body: {} | null
 	try {
 		const res = fetch(`https://ballchasing.com/api/${endpoint}`, requestOptions);
 		return res;
-	} catch (err) {
-		console.log(err);
+	} catch (error) {
+		throw error;
 	}
 }
