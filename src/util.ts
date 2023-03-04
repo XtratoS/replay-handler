@@ -55,6 +55,8 @@ export const splitReplayTitle = (replay: Replay): {
 
 export const logEvent = (ev: {
   title: string,
+  replayLink: string,
+  groupLink?: string,
   date: Date,
   action: string,
   seriesLetter?: string,

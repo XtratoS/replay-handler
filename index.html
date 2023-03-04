@@ -142,9 +142,14 @@
     } else if (replayAction === 'ADDING_NEW_REPLAY') {
       action.classList.add('text-bg-success');
     }
-    const replayName = document.createElement('div');
-    replayName.innerText = replay.title;
-    replayName.classList.add('replay-name');
+    const replayContainer = document.createElement('div');
+    const replayName = document.createElement(replay.replayLink ? 'a' : 'span');
+    replayContainer.appendChild(replayName);
+    replayName.innerText = replay.title + (replay.replayLink ? ' 🔗' : '');
+    replayName.href = replay.replayLink || '#';
+    replayName.style.textDecoration = 'none';
+    replayName.style.color = 'inherit';
+    replayContainer.classList.add('replay-name');
     const groupNameDiv = document.createElement('div');
     let groupName = replay.groupName || 'Unknown';
     groupNameDiv.innerText = groupName;
@@ -154,7 +159,7 @@
     groupNameDiv.style.color = invertColor(bgColor);
     container.appendChild(date);
     container.appendChild(action);
-    container.appendChild(replayName);
+    container.appendChild(replayContainer);
     container.appendChild(groupNameDiv);
     return container;
   }

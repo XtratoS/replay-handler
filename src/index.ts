@@ -49,6 +49,7 @@ const handleNewReplay = async (replay: Replay) => {
   const groupName = `${team1abbr.toUpperCase()} vs ${team2abbr.toUpperCase()}`;
 
   const eventBaseArgs = {
+    replayLink: replay.link,
     title: replay.replay_title,
     date: new Date(),
     seriesLetter,
@@ -88,6 +89,7 @@ const handleNewReplay = async (replay: Replay) => {
 
   logEvent({
     ...eventBaseArgs,
+    groupLink: `https://ballchasing.com/group/${groupResponse.groupId}`,
     action: Actions.ADDING_NEW_REPLAY,
     actionText: `${Actions.ADDING_NEW_REPLAY}; ${replay.replay_title}; ${groupName}`
   });
