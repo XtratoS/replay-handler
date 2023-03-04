@@ -49,7 +49,7 @@ const handleNewReplay = async (replay: Replay) => {
   const groupName = `${team1abbr.toUpperCase()} vs ${team2abbr.toUpperCase()}`;
 
   const eventBaseArgs = {
-    replayLink: replay.link,
+    replayLink: `https://ballchasing.com/replay/${replay.link.split('/').pop()}`,
     title: replay.replay_title,
     date: new Date(),
     seriesLetter,
