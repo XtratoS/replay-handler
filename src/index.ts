@@ -2,11 +2,15 @@ require('dotenv').config({ path: __dirname+'/Secret.env' });
 import { EventEmitter } from 'events';
 import { findOrCreateGroup } from './GroupHandler';
 import { getLastNReplaysAfter, getLatestReplay, setReplayGroup } from './ReplayHandler';
-import { Actions, Replay } from './types';
+import { Actions, ConfigFile, GroupResponse, Replay } from './types';
 import { logEvent, sleep, splitReplayTitle } from './util';
-import { matchGroups } from './config.json';
 import express from 'express';
 import { readFileSync } from 'fs';
+
+const rawConfigFile = readFileSync('./config.json', 'utf-8');
+const parsedConfig: ConfigFile = JSON.parse(rawConfigFile);
+const matchGroups = parsedConfig.matchGroups;
+
 const app = express();
 let BCPORT = process.env.BALLCHASING_PORT || 3003;
 app.get('/', (req, res) => {
@@ -37,11 +41,6 @@ const handleNewReplay = async (replay: Replay) => {
   const { region, seriesLetter, team1abbr, team2abbr, gameIndex } = replayData;
 
   if (region.toLowerCase() !== 'mena') {
-    // logEvent({
-    //   title: replay.replay_title,
-    //   date: new Date(),
-    //   action: Actions.IGNORED_OTHER_REGION
-    // });
     console.error(Actions.IGNORED_OTHER_REGION);
     return;
   };
@@ -75,15 +74,12 @@ const handleNewReplay = async (replay: Replay) => {
     return;
   };
 
-  let groupResponse: {
-    new: boolean,
-    groupId: string
-  };
-
+  let groupResponse: GroupResponse;
   try {
     groupResponse = await findOrCreateGroup(parentGroupId, groupName);
   } catch (error) {
-    throw error;
+    console.error(error);
+    return;
   }
   if (!groupResponse) return;
 
@@ -94,33 +90,38 @@ const handleNewReplay = async (replay: Replay) => {
     actionText: `${Actions.ADDING_NEW_REPLAY}; ${replay.replay_title}; ${groupName}`
   });
 
-  let res;
+  let assignReplayToGroupResponse;
   try {
-    res = await setReplayGroup(replay.id, groupResponse.groupId);
+    assignReplayToGroupResponse = await setReplayGroup(replay.id, groupResponse.groupId);
   } catch (error) {
-    throw error;
+    console.error(error);
+    return;
   }
-  if (!res) return;
-  return res;
+  if (!assignReplayToGroupResponse) return;
+  return assignReplayToGroupResponse;
 }
 
 emitter.on(NEW_REPLAY_EVENT, handleNewReplay);
 
-const pollAndAssign = async (latestReplay: Replay) => {
-	await sleep(10000);
-	const newlyUploaded = await getLastNReplaysAfter(20, new Date(+new Date(latestReplay.created)+1000).toISOString());
-  if (!newlyUploaded) return;
-	if (newlyUploaded.length > 0) {
-		latestReplay = newlyUploaded[0];
+const pollForNewReplays = async (latestReplay: Replay) => {
+  const latestReplayTimestamp = +new Date(latestReplay.created);
+  const latestReplayDateString = new Date(latestReplayTimestamp).toISOString()
+	const newlyUploadedReplays = await getLastNReplaysAfter(20, latestReplayDateString);
+  if (!newlyUploadedReplays) return;
+	if (newlyUploadedReplays.length > 0) {
+		latestReplay = newlyUploadedReplays[0];
 	}
-	newlyUploaded.forEach(replay => {
+	newlyUploadedReplays.forEach(replay => {
 		emitter.emit(NEW_REPLAY_EVENT, replay);
 	});
-	pollAndAssign(latestReplay);
+  await sleep(10000);
+	pollForNewReplays(latestReplay);
 }
 
-(async () => {
-	let latestReplay = await getLatestReplay();
+const main = async () => {
+  let latestReplay = await getLatestReplay();
 	if (!latestReplay) return;
-	pollAndAssign(latestReplay);
-})();
+	pollForNewReplays(latestReplay);
+}
+
+main();
