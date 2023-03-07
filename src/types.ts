@@ -80,3 +80,15 @@ export enum Actions {
   ADDING_NEW_REPLAY = "ADDING_NEW_REPLAY",
   CREATED_GROUP = "CREATED_GROUP"
 }
+
+export type ConfigFile = {
+  matchGroups: {
+    groupId: string,
+    matches: string[]
+  }[]
+}
+
+export type GroupResponse = {
+  new: boolean,
+  groupId: string
+}

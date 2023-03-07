@@ -1,5 +1,5 @@
 import { makeAPIRequest } from "./API";
-import { ReplayGroup } from "./types";
+import { GroupResponse, ReplayGroup } from "./types";
 import { sleep } from "./util";
 
 const getGroupList = async (endpoint: string, method = 'GET', body: {} | null): Promise<ReplayGroup[]> => {
@@ -29,10 +29,7 @@ export const getGroups = async (groupId: string, groupName = ''): Promise<{group
 	return output;
 }
 
-export const findOrCreateGroup = async (parentGroupId: string, groupName: string): Promise<{
-  new: boolean,
-  groupId: string
-}> => {
+export const findOrCreateGroup = async (parentGroupId: string, groupName: string): Promise<GroupResponse> => {
 
   const childGroupsRequest = await makeAPIRequest(`groups?group=${parentGroupId}`);
   if (!childGroupsRequest) {
