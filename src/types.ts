@@ -92,3 +92,17 @@ export type GroupResponse = {
   new: boolean,
   groupId: string
 }
+
+export type LogEvent = {
+  title: string,
+  replayLink: string,
+  groupLink?: string,
+  date: Date,
+  action: string,
+  seriesLetter?: string,
+  gameIndex?: string,
+  groupName?: string,
+  team1?: string,
+  team2?: string,
+  actionText?: string
+}

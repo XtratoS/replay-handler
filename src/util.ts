@@ -1,4 +1,4 @@
-import { Replay } from "./types";
+import { LogEvent, Replay } from "./types";
 import { appendFileSync, readFileSync, writeFileSync } from 'fs';
 
 type abbrType = {abbr: string, full: string}
@@ -53,19 +53,7 @@ export const splitReplayTitle = (replay: Replay): {
 	}
 }
 
-export const logEvent = (ev: {
-  title: string,
-  replayLink: string,
-  groupLink?: string,
-  date: Date,
-  action: string,
-  seriesLetter?: string,
-  gameIndex?: string,
-  groupName?: string,
-  team1?: string,
-  team2?: string,
-  actionText?: string
-}) => {
+export const logEvent = (ev: LogEvent) => {
   let rawData;
   let currentLog;
   try {
@@ -79,4 +67,10 @@ export const logEvent = (ev: {
     ev
   ];
   writeFileSync('./console.log', JSON.stringify(newLog));
+}
+
+export const getJsonLog = () => {
+  let file: string = readFileSync('./console.log', 'utf-8');
+  let fileJson: LogEvent[] = JSON.parse(file);
+  return fileJson;
 }

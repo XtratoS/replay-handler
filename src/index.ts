@@ -2,14 +2,16 @@ require('dotenv').config({ path: __dirname+'/Secret.env' });
 import { EventEmitter } from 'events';
 import { findOrCreateGroup } from './GroupHandler';
 import { getLastNReplaysAfter, getLatestReplay, setReplayGroup } from './ReplayHandler';
-import { Actions, ConfigFile, GroupResponse, Replay } from './types';
-import { logEvent, sleep, splitReplayTitle } from './util';
+import { Actions, ConfigFile, GroupResponse, LogEvent, Replay } from './types';
+import { getJsonLog, logEvent, sleep, splitReplayTitle } from './util';
 import express from 'express';
 import { readFileSync } from 'fs';
 
 const rawConfigFile = readFileSync('./config.json', 'utf-8');
 const parsedConfig: ConfigFile = JSON.parse(rawConfigFile);
 const matchGroups = parsedConfig.matchGroups;
+let jsonLog = getJsonLog();
+let logCached = true;
 
 const app = express();
 let BCPORT = process.env.BALLCHASING_PORT || 3003;
@@ -19,8 +21,11 @@ app.get('/', (req, res) => {
   res.send(file);
 });
 app.get('/log', (req, res) => {
-  let file = readFileSync('./console.log');
-  res.send(file);
+  if (!logCached) {
+    jsonLog = getJsonLog();
+  }
+  let responseJson = jsonLog.slice(-50);
+  res.json(responseJson);
 });
 app.listen(BCPORT, () => {
   console.log(`BALLCHASING logger is now listening on port ${BCPORT}`);
@@ -104,24 +109,35 @@ const handleNewReplay = async (replay: Replay) => {
 emitter.on(NEW_REPLAY_EVENT, handleNewReplay);
 
 const pollForNewReplays = async (latestReplay: Replay) => {
-  const latestReplayTimestamp = +new Date(latestReplay.created);
-  const latestReplayDateString = new Date(latestReplayTimestamp).toISOString()
-	const newlyUploadedReplays = await getLastNReplaysAfter(20, latestReplayDateString);
-  if (!newlyUploadedReplays) return;
-	if (newlyUploadedReplays.length > 0) {
-		latestReplay = newlyUploadedReplays[0];
-	}
+  const latestReplayTimestamp = +new Date(latestReplay.created) + 1;
+  const latestReplayDateString = new Date(latestReplayTimestamp).toISOString();
+  let newlyUploadedReplays = [];
+  try {
+    newlyUploadedReplays = await getLastNReplaysAfter(20, latestReplayDateString);
+  } catch (error) {
+    console.error(error);
+    return latestReplay;
+  }
+  if (newlyUploadedReplays.length === 0) return latestReplay;
+  latestReplay = newlyUploadedReplays[0];
 	newlyUploadedReplays.forEach(replay => {
 		emitter.emit(NEW_REPLAY_EVENT, replay);
 	});
-  await sleep(10000);
-	pollForNewReplays(latestReplay);
+  return latestReplay;
 }
 
 const main = async () => {
+  let counter = 0;
   let latestReplay = await getLatestReplay();
-	if (!latestReplay) return;
-	pollForNewReplays(latestReplay);
+  while(true) {
+    console.log(`${++counter}: Polling for new replays`)
+    if (!latestReplay) {
+      await sleep(10000);
+      continue;
+    }
+    latestReplay = await pollForNewReplays(latestReplay);
+    await sleep(10000);
+  }
 }
 
 main();
