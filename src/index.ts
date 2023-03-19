@@ -3,33 +3,15 @@ import { EventEmitter } from 'events';
 import { findOrCreateGroup } from './GroupHandler';
 import { getLastNReplaysAfter, getLatestReplay, setReplayGroup } from './ReplayHandler';
 import { Actions, ConfigFile, GroupResponse, LogEvent, Replay } from './types';
-import { getJsonLog, logEvent, sleep, splitReplayTitle } from './util';
-import express from 'express';
+import { logEvent, sleep, splitReplayTitle } from './util';
 import { readFileSync } from 'fs';
+import startApp from './ExpressApp';
+
+let cacheHandler = startApp();
 
 const rawConfigFile = readFileSync('./config.json', 'utf-8');
 const parsedConfig: ConfigFile = JSON.parse(rawConfigFile);
 const matchGroups = parsedConfig.matchGroups;
-let jsonLog = getJsonLog();
-let logCached = true;
-
-const app = express();
-let BCPORT = process.env.BALLCHASING_PORT || 3003;
-app.get('/', (req, res) => {
-  let file = readFileSync('../index.html');
-  res.set('Content-Type', 'text/html; charset=utf-8');
-  res.send(file);
-});
-app.get('/log', (req, res) => {
-  if (!logCached) {
-    jsonLog = getJsonLog();
-  }
-  let responseJson = jsonLog.slice(-50);
-  res.json(responseJson);
-});
-app.listen(BCPORT, () => {
-  console.log(`BALLCHASING logger is now listening on port ${BCPORT}`);
-});
 
 const NEW_REPLAY_EVENT = 'NEW_REPLAY_EVENT';
 const emitter = new EventEmitter();
@@ -42,6 +24,8 @@ const handleNewReplay = async (replay: Replay) => {
     console.error(error);
   }
   if (!replayData) return;
+
+  cacheHandler.updateCache();
 
   const { region, seriesLetter, team1abbr, team2abbr, gameIndex } = replayData;
 
@@ -130,7 +114,7 @@ const main = async () => {
   let counter = 0;
   let latestReplay = await getLatestReplay();
   while(true) {
-    console.log(`${++counter}: Polling for new replays`)
+    console.log(`${++counter}: ${counter%2==0?'Pong!':'Ping!'}`)
     if (!latestReplay) {
       await sleep(10000);
       continue;
