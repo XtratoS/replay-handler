@@ -1,0 +1,8 @@
+{
+  "matchGroups": [
+    { "groupId": "quarterfinals-ntpumz5iut", "matches": ["P-E", "P-F", "P-G", "P-H"] },
+    { "groupId": "semifinals-ecv0s6ngph", "matches": ["P-I", "P-J"] },
+    { "groupId": "final-01yb6262uu", "matches": ["P-K"] },
+    { "groupId": "gt__-daboez0bba", "matches": ["H"] }
+  ]
+}
