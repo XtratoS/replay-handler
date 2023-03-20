@@ -1,5 +1,6 @@
 import express from 'express';
 import { readFileSync } from 'fs';
+import path from 'path';
 import { getJsonLog } from './util';
 let jsonLog = getJsonLog();
 let logCached = true;
@@ -26,6 +27,8 @@ app.get('/log', (req, res) => {
   let responseJson = jsonLog.slice(-50);
   res.json(responseJson);
 });
+
+app.use('/config_maker', express.static(path.join(process.cwd(), '..', 'config_maker')));
 
 const startApp = () => {
   app.listen(BCPORT, () => {
