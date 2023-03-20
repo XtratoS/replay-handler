@@ -29,7 +29,8 @@ const handleNewReplay = async (replay: Replay) => {
 
   const { region, seriesLetter, team1abbr, team2abbr, gameIndex } = replayData;
 
-  if (region.toLowerCase() !== 'mena') {
+  const regions = process.env.CONSIDERED_REGIONS ? process.env.CONSIDERED_REGIONS.split(',') : ['mena']
+  if (!regions.includes(region.toLowerCase())) {
     console.error(Actions.IGNORED_OTHER_REGION);
     return;
   };
@@ -114,7 +115,7 @@ const main = async () => {
   let counter = 0;
   let latestReplay = await getLatestReplay();
   while(true) {
-    console.log(`${++counter}: ${counter%2==0?'Pong!':'Ping!'}`)
+    console.log(`${++counter}: ${counter%2==0?'Pong!':'Ping!'}`);
     if (!latestReplay) {
       await sleep(10000);
       continue;
