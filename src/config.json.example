@@ -1,0 +1,12 @@
+{
+  "matchGroups": [
+    {"groupId": "quarterfinals-3nwt4jtfpz", "matches": ["A", "B", "C", "D"]},
+    {"groupId": "semifinals-lb661h3ol6", "matches": ["E", "F"]},
+    {"groupId": "final-dle1of2rmm", "matches": ["G"]},
+    {"groupId": "round-1-lkjy3wwzo5", "matches": ["A", "B", "C", "D", "E", "F", "G", "H"]},
+    {"groupId": "round-2-11uzivgy87", "matches": ["I", "J", "K", "L", "M", "N", "O", "P"]},
+    {"groupId": "round-3-odtpd92meu", "matches": ["Q", "R", "S", "T", "U", "V", "W", "X"]},
+    {"groupId": "round-4-ryp2cvc3ne", "matches": ["Y", "Z", "AA", "AB", "AC", "AD"]},
+    {"groupId": "round-5-vfxhdxq3ex", "matches": ["AE", "AF", "AG"]}
+  ]
+}
