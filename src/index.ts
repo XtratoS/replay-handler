@@ -29,8 +29,9 @@ const handleNewReplay = async (replay: Replay) => {
 
   const { region, seriesLetter, team1abbr, team2abbr, gameIndex } = replayData;
 
-  const regions = process.env.CONSIDERED_REGIONS ? process.env.CONSIDERED_REGIONS.split(',') : ['mena']
-  if (!regions.includes(region.toLowerCase())) {
+  const regions = process.env.CONSIDERED_REGIONS ? process.env.CONSIDERED_REGIONS.split(',') : ['mena'];
+  const regionsLowerCase = regions.map(r => r.toLowerCase());
+  if (!regionsLowerCase.includes(region.toLowerCase())) {
     console.error(Actions.IGNORED_OTHER_REGION);
     return;
   };
@@ -73,18 +74,18 @@ const handleNewReplay = async (replay: Replay) => {
   }
   if (!groupResponse) return;
 
-  logEvent({
-    ...eventBaseArgs,
-    groupLink: `https://ballchasing.com/group/${groupResponse.groupId}`,
-    action: Actions.ADDING_NEW_REPLAY,
-    actionText: `${Actions.ADDING_NEW_REPLAY}; ${replay.replay_title}; ${groupName}`
-  });
-
   let assignReplayToGroupResponse;
   try {
     assignReplayToGroupResponse = await setReplayGroup(replay.id, groupResponse.groupId);
+    logEvent({
+      ...eventBaseArgs,
+      groupLink: `https://ballchasing.com/group/${groupResponse.groupId}`,
+      action: Actions.ADDING_NEW_REPLAY,
+      actionText: `${Actions.ADDING_NEW_REPLAY}; ${replay.replay_title}; ${groupName}`
+    });
+    console.log(`assigned replay *${replay.replay_title}* to group *${groupResponse.groupId}*`);
   } catch (error) {
-    console.error(error);
+    console.error(`Failed to assign replay *${replay.replay_title}* to group ${groupResponse.groupId}`, error);
     return;
   }
   if (!assignReplayToGroupResponse) return;
