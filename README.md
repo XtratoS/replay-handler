@@ -95,11 +95,11 @@ The configuration file maker is a simple page that enables creating configuratio
 Once the project is running, the configuration maker can be accessed via <a href="http://localhost:3003/config_maker" target="_blank">http://localhost:3003/config_maker</a> (using the default configuration)<br/>
 Configuration files created can then be downloaded and can replace the `config.json` file in the `/build` directory.
 
-### How This Works Under The Hood:
+## How This Works Under The Hood:
 - When first ran, the script stores the latest N replays uploaded by the owner of the ballchasing API token provided in the .env file.
 - Every 10 seconds, a new request is sent to ballchasing.com's API to get the most recent N replays and figure out if there are any new replays.
 - If there are any new replays, their name is parsed in-order to figure out if they go into any of the groups in the configuration file.
 - Both the action viewer and config maker run in the background in express.js servers.
 
-### License and Usage:
+## License and Usage:
 Feel free to use this software anyway you like, with or without referencing - though referencing to this is appreciated.
