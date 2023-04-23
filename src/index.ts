@@ -2,7 +2,7 @@ require('dotenv').config({ path: __dirname+'/Secret.env' });
 import { EventEmitter } from 'events';
 import { findOrCreateGroup } from './GroupHandler';
 import { getLastNReplaysAfter, getLatestReplay, setReplayGroup } from './ReplayHandler';
-import { Actions, ConfigFile, GroupResponse, LogEvent, Replay } from './types';
+import { Actions, ConfigFile, GroupResponse, Replay } from './types';
 import { logEvent, sleep, splitReplayTitle } from './util';
 import { readFileSync } from 'fs';
 import startApp from './ExpressApp';
@@ -29,13 +29,6 @@ const handleNewReplay = async (replay: Replay) => {
 
   const { region, seriesLetter, team1abbr, team2abbr, gameIndex } = replayData;
 
-  const regions = process.env.CONSIDERED_REGIONS ? process.env.CONSIDERED_REGIONS.split(',') : ['mena'];
-  const regionsLowerCase = regions.map(r => r.toLowerCase());
-  if (!regionsLowerCase.includes(region.toLowerCase())) {
-    console.error(Actions.IGNORED_OTHER_REGION);
-    return;
-  };
-
   const groupName = `${team1abbr.toUpperCase()} vs ${team2abbr.toUpperCase()}`;
 
   const eventBaseArgs = {
@@ -44,10 +37,24 @@ const handleNewReplay = async (replay: Replay) => {
     date: new Date(),
     seriesLetter,
     gameIndex,
-    groupName,
+    groupName: 'Unknown',
     team1: team1abbr,
     team2: team2abbr
   };
+
+  const regions = process.env.CONSIDERED_REGIONS ? process.env.CONSIDERED_REGIONS.split(',') : ['MENA'];
+  const regionsLowerCase = regions.map(r => r.toLowerCase());
+  if (!regionsLowerCase.includes(region.toLowerCase())) {
+    logEvent({
+      ...eventBaseArgs,
+      action: Actions.IGNORED_OTHER_REGION,
+      actionText: `Ignored replay *${replay.replay_title}* from ${region} region`
+    });
+    console.error(Actions.IGNORED_OTHER_REGION);
+    return;
+  };
+
+  eventBaseArgs.groupName = groupName;
 
   if (gameIndex === '0') {
     logEvent({
@@ -83,9 +90,9 @@ const handleNewReplay = async (replay: Replay) => {
       action: Actions.ADDING_NEW_REPLAY,
       actionText: `${Actions.ADDING_NEW_REPLAY}; ${replay.replay_title}; ${groupName}`
     });
-    console.log(`assigned replay *${replay.replay_title}* to group *${groupResponse.groupId}*`);
+    console.log(`assigned replay *${replay.replay_title}* to group *${groupResponse.groupId}* in parent group *${parentGroupId}*`);
   } catch (error) {
-    console.error(`Failed to assign replay *${replay.replay_title}* to group ${groupResponse.groupId}`, error);
+    console.error(`Failed to assign replay *${replay.replay_title}* to group *${groupResponse.groupId}*`, error);
     return;
   }
   if (!assignReplayToGroupResponse) return;
