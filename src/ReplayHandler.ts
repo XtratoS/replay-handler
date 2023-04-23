@@ -15,7 +15,7 @@ export const setReplayGroup = async (replayId: string, groupId: string) => {
 export const getLastNReplaysAfter = async (n = 20, after: string): Promise<Replay[]> => {
   let res;
   try {
-    res = await makeAPIRequest(`replays?uploader=me&count=${n}&created-after=${after}&title=mena`, 'GET', null);
+    res = await makeAPIRequest(`replays?uploader=me&count=${n}&created-after=${after}`, 'GET', null);
   } catch (error) {
     throw error;
   }
