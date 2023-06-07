@@ -58,13 +58,45 @@
     align-items: center;
     justify-content: center;
   }
+  #toggle-ignored-regions-button {
+    position: fixed;
+    top: 2em;
+    right: 2em;
+    padding: .5em;
+  }
+  .hidden {
+    display: none;
+  }
 </style>
 <body>
   <div id="data">
     <div id="placeholder"></div>
+    <button id="toggle-ignored-regions-button" onclick="toggleIgnoredRegions()">Hide Ignored Regions</button>
   </div>
 </body>
 <script>
+  let ignoredRegionsHidden = false;
+  const toggleIgnoredRegions = () => {
+    if (ignoredRegionsHidden) {
+      document.querySelector("#toggle-ignored-regions-button").innerText = "Hide Ignored Regions";
+      const children = document.querySelector("#data").children;
+      for (let c of children) {
+        if (c.innerText.includes("IGNORED_OTHER_REGION")) {
+          c.classList.remove("hidden");
+        }
+      }
+      ignoredRegionsHidden = false;
+    } else {
+      document.querySelector("#toggle-ignored-regions-button").innerText = "Show Ignored Regions";
+      const children = document.querySelector("#data").children;
+      for (let c of children) {
+        if (c.innerText.includes("IGNORED_OTHER_REGION")) {
+          c.classList.add("hidden");
+        }
+      }
+      ignoredRegionsHidden = true;
+    }
+  }
   let replaysData = [];
   const Actions = {
     IGNORED_OTHER_REGION: "IGNORED_OTHER_REGION",
