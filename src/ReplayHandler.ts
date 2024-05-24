@@ -29,7 +29,7 @@ export const getLastNReplaysAfter = async (n = 20, after: string): Promise<Repla
 export const getLatestReplay = async (): Promise<Replay|undefined> => {
   let res;
   try {
-    res = await makeAPIRequest(`replays?uploader=me&count=1&title=mena`, 'GET', null);
+    res = await makeAPIRequest(`replays?uploader=me&count=1&sort-dir=desc&sory-by=upload-date`);
   } catch (error) {
     throw error;
   }
