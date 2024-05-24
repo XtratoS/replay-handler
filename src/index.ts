@@ -16,6 +16,8 @@ const matchGroups = parsedConfig.matchGroups;
 const NEW_REPLAY_EVENT = 'NEW_REPLAY_EVENT';
 const emitter = new EventEmitter();
 
+const gameIndexCache: {[key: string]: number} = {};
+
 const handleNewReplay = async (replay: Replay) => {
   let replayData;
   try {
@@ -28,6 +30,7 @@ const handleNewReplay = async (replay: Replay) => {
   cacheHandler.updateCache();
 
   const { region, seriesLetter, team1abbr, team2abbr, gameIndex } = replayData;
+  let seriesId = region+seriesLetter;
 
   const groupName = `${team1abbr.toUpperCase()} vs ${team2abbr.toUpperCase()}`;
 
@@ -35,14 +38,27 @@ const handleNewReplay = async (replay: Replay) => {
     replayLink: `https://ballchasing.com/replay/${replay.link.split('/').pop()}`,
     title: replay.replay_title,
     date: new Date(),
+    region,
     seriesLetter,
+    prevGameIndex: gameIndexCache[seriesId],
     gameIndex,
-    groupName: 'Unknown',
+    groupName: groupName,
     team1: team1abbr,
-    team2: team2abbr
+    team2: team2abbr,
+    blueName: replay.blue.name,
+    blueGoals: replay.blue.goals,
+    bluePlayers: 'replay.blue.players.map(p => p.name).join(", ")',
+    orangeName: replay.orange.name,
+    orangeGoals: replay.orange.goals,
+    orangePlayers: 'replay.orange.players.map(p => p.name).join(", ")',
   };
 
-  const regions = process.env.CONSIDERED_REGIONS ? process.env.CONSIDERED_REGIONS.split(',') : ['MENA'];
+  if (!gameIndexCache[seriesId])
+    gameIndexCache[seriesId] = parseInt(gameIndex);
+  else
+    gameIndexCache[seriesId]++;
+
+  const regions = process.env.CONSIDERED_REGIONS ? process.env.CONSIDERED_REGIONS.split(',').map(i => i.trim()) : ['MENA'];
   const regionsLowerCase = regions.map(r => r.toLowerCase());
   if (!regionsLowerCase.includes(region.toLowerCase())) {
     logEvent({
@@ -53,8 +69,6 @@ const handleNewReplay = async (replay: Replay) => {
     console.error(Actions.IGNORED_OTHER_REGION);
     return;
   };
-
-  eventBaseArgs.groupName = groupName;
 
   if (gameIndex === '0') {
     logEvent({
@@ -111,7 +125,7 @@ const pollForNewReplays = async (latestReplay: Replay) => {
     console.error(error);
     return latestReplay;
   }
-  if (newlyUploadedReplays.length === 0) return latestReplay;
+  if ((!newlyUploadedReplays) || (newlyUploadedReplays.length === 0)) return latestReplay;
   latestReplay = newlyUploadedReplays[0];
 	newlyUploadedReplays.forEach(replay => {
 		emitter.emit(NEW_REPLAY_EVENT, replay);
@@ -123,13 +137,14 @@ const main = async () => {
   let counter = 0;
   let latestReplay = await getLatestReplay();
   while(true) {
-    console.log(`${++counter}: ${counter%2==0?'Pong!':'Ping!'}`);
+    let timeNow = new Date();
+    process.stdout.write(`${timeNow.getHours().toString().padStart(2, '0')+':'+timeNow.getMinutes().toString().padStart(2, '0')+':'+timeNow.getSeconds().toString().padStart(2, '0')} - ${++counter}: ${counter%2==0?'Pong!':'Ping!'}\r`);
     if (!latestReplay) {
-      await sleep(10000);
+      await sleep(15000);
       continue;
     }
     latestReplay = await pollForNewReplays(latestReplay);
-    await sleep(10000);
+    await sleep(15000);
   }
 }
 
