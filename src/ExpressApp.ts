@@ -6,7 +6,7 @@ let jsonLog = getJsonLog();
 let logCached = true;
 
 const app = express();
-let BCPORT = process.env.BALLCHASING_PORT || 3003;
+let BCPORT = 3003;
 
 app.get('/', (req, res) => {
   let file = readFileSync('../index.html');
